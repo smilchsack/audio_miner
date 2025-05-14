@@ -1,6 +1,6 @@
 services:
   audio_miner:
-    image: smilchsack/audio_miner:0.0.1
+    image: smilchsack/audio_miner:0.0.3
     container_name: audio_miner_collector
     environment:
       - TZ=Europe/Berlin

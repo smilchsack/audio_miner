@@ -1,5 +1,7 @@
 # README for audio_miner
 
+![Test Status](https://github.com/smilchsack/audio_miner/actions/workflows/ci.yml/badge.svg)
+
 ## audio_miner
 
 audio_miner is a Python application that records audio streams and transcribes them using the Whisper model. It allows users to capture radio broadcasts and convert them into text files for easy access and analysis.
