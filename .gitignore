@@ -1,0 +1,36 @@
+# Build-Dateien
+build/
+dist/
+*.egg-info/
+# Bytecode-Dateien
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtuelle Umgebungen
+env/
+venv/
+.env/
+
+# Conda Umgebung (falls lokal erzeugt)
+conda-meta/
+
+# Log-Dateien
+*.log
+
+# Audio- und Transkriptionsordner (generierte Dateien)
+output/
+audio/
+transkriptionen/
+
+# IDE-spezifische Dateien
+.vscode/
+.idea/
+
+# System-Dateien
+.DS_Store
+Thumbs.db
+gitlab_variables.txt
+
+# Coverage-Dateien
+.coverage
