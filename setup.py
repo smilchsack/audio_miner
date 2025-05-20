@@ -18,6 +18,9 @@ setup(
         'ffmpeg-python',
         'numpy',
         'colorama',
+        'torch',
+        'torchaudio',
+        'pyannote.audio',
     ],
     classifiers=[
         'Programming Language :: Python :: 3',
