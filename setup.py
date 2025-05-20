@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='audio_miner',
-    version='0.0.4',
+    version='0.0.5',
     author='Sebastian Milchsack',
     author_email='info@milchsack.com',
     description='A radio streaming and transcription application.',
