@@ -11,6 +11,8 @@ from datetime import datetime
 from enum import Enum
 import colorama
 import shutil
+
+from audio_miner.audio_transcriber import AudioTranscriber, save_results_to_file
 from .version import __version__
 colorama.init()
 
@@ -80,7 +82,7 @@ class FileMonitor(threading.Thread):
 class RadioRecorder:
     five_percent = 5
 
-    def __init__(self, stream_url, sender, segment_time=60, base_dir=None, poll_interval=5, whisper_model=WhisperModel.TURBO, quality="64k", record_only=False, transcribe_only=False, start_time_str=None, end_time_str=None, verbose=False, ffmpeg_path=None, run_once=False, use_monitor=True):
+    def __init__(self, stream_url, sender, segment_time=60, base_dir=None, poll_interval=5, whisper_model=WhisperModel.TURBO, quality="64k", record_only=False, transcribe_only=False, start_time_str=None, end_time_str=None, token=None, verbose=False, ffmpeg_path=None, run_once=False, use_monitor=True):
         if base_dir is None:
             base_dir = os.getcwd()
         
@@ -104,6 +106,7 @@ class RadioRecorder:
         self.run_once = run_once
         self.monitor = None
         self.use_monitor = use_monitor
+        self.token = token
 
         self.start_time = None
         if start_time_str and transcribe_only:
@@ -124,6 +127,9 @@ class RadioRecorder:
 
         if self.record_only and self.transcribe_only:
             raise ValueError("Fehler: record-only und transcribe-only können nicht gleichzeitig True sein.")
+        
+
+        self.transcriber = AudioTranscriber(whisper_model_size=self.whisper_model.value, token=self.token)
 
         os.makedirs(self.audio_dir, exist_ok=True)
         os.makedirs(self.transcription_dir, exist_ok=True)
@@ -237,7 +243,6 @@ class RadioRecorder:
         except subprocess.TimeoutExpired:
             self.ffmpeg_process.kill()
             
-        # Monitor stoppen und auf Thread-Ende warten
         if self.monitor:
             self.monitor.stop()
             self.monitor.join()
@@ -272,29 +277,23 @@ class RadioRecorder:
                     os.remove(audio_file)
                     continue
                 
-                # Versuche, den Start-Timestamp aus dem Dateinamen zu extrahieren
-                # Format: SENDER_YYYYMMDD_HHMMSS_YYYYMMDD_HHMMSS.mp3 oder SENDER_YYYYMMDD_HHMMSS.mp3
                 parts = file.replace(".mp3", "").split('_')
                 file_start_timestamp_str = None
-                if len(parts) >= 2: # Mindestens SENDER_TIMESTAMP
-                    # Der erste Timestamp ist der Start-Timestamp
+                if len(parts) >= 2:
                     potential_timestamp_str = parts[1]
-                    if len(parts) > 2 and len(parts[2]) == 6 : # Prüfen ob es ein Zeitstempel ist HHMMSS
-                         potential_timestamp_str = f"{parts[1]}_{parts[2]}" # Format YYYYMMDD_HHMMSS
-                    elif len(parts) > 3 and len(parts[1]) == 8 and len(parts[2]) == 6: # Format SENDER_YYYYMMDD_HHMMSS_...
+                    if len(parts) > 2 and len(parts[2]) == 6:
+                         potential_timestamp_str = f"{parts[1]}_{parts[2]}"
+                    elif len(parts) > 3 and len(parts[1]) == 8 and len(parts[2]) == 6:
                         potential_timestamp_str = f"{parts[1]}_{parts[2]}"
 
-                # Prüfen, ob der extrahierte String ein gültiger Timestamp ist
                 file_start_time = None
                 if potential_timestamp_str:
                     try:
                         file_start_time = datetime.strptime(potential_timestamp_str, "%Y%m%d_%H%M%S")
                     except ValueError:
                         self.logger.debug(f"Konnte keinen gültigen Start-Timestamp aus Dateinamen extrahieren: {file}")
-                        # Fallback auf Modifikationszeit, wenn kein Timestamp im Namen ist oder nicht geparst werden kann
                         file_start_time = datetime.fromtimestamp(os.path.getmtime(audio_file))
                 else:
-                     # Fallback auf Modifikationszeit, wenn kein Timestamp im Namen ist
                     file_start_time = datetime.fromtimestamp(os.path.getmtime(audio_file))
 
 
@@ -302,11 +301,9 @@ class RadioRecorder:
                 
                 should_queue = False
                 if self.transcribe_only:
-                    # Prüfen, ob die Datei bereits transkribiert wurde
                     if os.path.exists(transcription_file):
                         continue
 
-                    # Zeitliche Bedingungen prüfen
                     within_start_time = True
                     if self.start_time:
                         within_start_time = file_start_time >= self.start_time
@@ -317,7 +314,7 @@ class RadioRecorder:
                     
                     if within_start_time and within_end_time:
                         should_queue = True
-                elif file_start_time < reference_time and not os.path.exists(transcription_file): # Originalbedingung für nicht transcribe_only
+                elif file_start_time < reference_time and not os.path.exists(transcription_file):
                     should_queue = True
 
 
@@ -329,18 +326,7 @@ class RadioRecorder:
 
     def transcribe_audio(self, audio_file):
         self.logger.debug("Lade Whisper Modell: %s", self.whisper_model)
-        model_name = self.whisper_model.value
-        if self.verbose:
-            model = whisper.load_model(model_name)
-            self.logger.info("Starte Transkription: %s", audio_file)
-            result = model.transcribe(audio_file)
-        else:
-            with open(os.devnull, 'w') as fnull, contextlib.redirect_stdout(fnull), contextlib.redirect_stderr(fnull):
-                model = whisper.load_model(model_name)
-                result = model.transcribe(audio_file)
-        
-        segments = result.get("segments", [])
-        transcription = "\n".join(segment["text"].strip() for segment in segments)
+        transcription = self.transcriber.transcribe_audio(audio_file)
         
         return transcription
 
@@ -352,11 +338,14 @@ class RadioRecorder:
                 transcription = self.transcribe_audio(audio_file)
                 base_name = os.path.basename(audio_file).replace(".mp3", ".txt")
                 transcription_file = os.path.join(self.transcription_dir, base_name)
-                with open(transcription_file, "w", encoding="utf-8") as f:
-                    f.write(transcription)
+                if self.token is not None:
+                    save_results_to_file(transcription, transcription_file)
+                else:
+                    with open(transcription_file, "w", encoding="utf-8") as f:
+                        f.write(transcription)
                 self.logger.info("Transkription abgeschlossen: %s", transcription_file)
                 self.segment_queue.task_done()
-                self.queued_files.remove(audio_file)  # Remove from set when done
+                self.queued_files.remove(audio_file)
             except queue.Empty:
                 if run_once or self.transcribe_only:
                     break
@@ -375,7 +364,7 @@ class RadioRecorder:
         """
 
         print(art)
-
+        
         if self.record_only:
             self.logger.info("Starte Thread für Aufzeichnungen...")
         

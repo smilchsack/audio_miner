@@ -23,11 +23,13 @@ original_thread_class = threading.Thread
 
 class TestRadioEdgeCases(unittest.TestCase):
 
-    def test_no_base_dir(self):
+    @patch('audio_miner.main.AudioTranscriber') 
+    def test_no_base_dir(self, mock_audio_transcriber):
         recorder = RadioRecorder("http://test", "NoBaseDir", segment_time=2, base_dir=None, use_monitor=False)
         self.assertIn("NoBaseDir", recorder.audio_dir)
 
-    def test_verbose_in_constructor(self):
+    @patch('audio_miner.main.AudioTranscriber')
+    def test_verbose_in_constructor(self, mock_audio_transcriber):
         recorder = RadioRecorder("http://test", "VerbosityTest", segment_time=2, verbose=True, use_monitor=False)
         self.assertTrue(recorder.verbose)
 

@@ -6,7 +6,7 @@ from unittest.mock import patch, MagicMock
 from audio_miner.main import FileMonitor
 
 class TestFileMonitor(unittest.TestCase):
-    @patch('time.sleep', side_effect=lambda x: None)  # Kein echtes Warten
+    @patch('time.sleep', side_effect=lambda x: None)
     def test_file_monitor_invokes_callback_after_inactivity(self, _):
         """
         Verifiziert, dass der Callback aufgerufen wird,
@@ -21,16 +21,13 @@ class TestFileMonitor(unittest.TestCase):
         try:
             monitor.start()
 
-            # Datei erst etwas wachsen lassen
             with open(file_path, 'w') as f:
                 f.write("Initial data")
 
-            # Kurz warten, dann erneut schreiben
             time.sleep(0.1)
             with open(file_path, 'a') as f:
                 f.write("More data")
 
-            # Kein weiteres Wachstum => Callback sollte ausgelöst werden
             time.sleep(0.3)
 
             monitor.stop()

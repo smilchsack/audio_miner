@@ -23,7 +23,7 @@ class TestRadioRecorder(unittest.TestCase):
         )
 
     @patch("os.listdir", return_value=["old_file.mp3"])
-    @patch("os.path.getmtime", return_value=(datetime.now().timestamp() - 3600))  # 1h alt
+    @patch("os.path.getmtime", return_value=(datetime.now().timestamp() - 3600))
     @patch("os.path.exists", return_value=False)
     @patch("os.path.getsize", return_value=1024)
     def test_check_and_queue_old_files(self, mock_getsize, mock_exists, mock_getmtime, mock_listdir):
@@ -31,18 +31,16 @@ class TestRadioRecorder(unittest.TestCase):
         self.recorder.check_and_queue_old_files(datetime.now())
         self.assertEqual(self.recorder.segment_queue.qsize(), 1)
 
-    @patch("whisper.load_model")
     @patch("builtins.open", new_callable=mock_open)
-    def test_transcribe_audio(self, mock_open, mock_whisper):
+    def test_transcribe_audio(self, mock_open):
         """Testet die Transkription einer Datei."""
-        mock_model = MagicMock()
-        mock_model.transcribe.return_value = {"segments": [{"text": "Hallo Welt"}]}
-        mock_whisper.return_value = mock_model
+        mock_transcribe_result = {"segments": [{"text": "Hallo Welt"}]}
 
-        result = self.recorder.transcribe_audio("test.mp3")
+        with patch.object(self.recorder.transcriber.whisper_model, 'transcribe', return_value=mock_transcribe_result) as mock_whisper_model_transcribe:
+            result = self.recorder.transcribe_audio("test.mp3")
 
-        self.assertEqual(result, "Hallo Welt")
-        mock_whisper.assert_called_once_with("tiny")
+            self.assertEqual(result, "Hallo Welt")
+            mock_whisper_model_transcribe.assert_called_once_with("test.mp3", language='de')
 
     @patch("audio_miner.main.RadioRecorder.transcribe_audio")
     @patch("builtins.open", new_callable=mock_open)
@@ -53,7 +51,7 @@ class TestRadioRecorder(unittest.TestCase):
         self.recorder.segment_queue.put(test_audio_file)
         self.recorder.queued_files.add(test_audio_file)
 
-        self.recorder.running = False  # Einmal ausführen
+        self.recorder.running = False
         self.recorder.transcription_worker(run_once=True)
 
         mock_open.assert_any_call(expected_file, "w", encoding="utf-8")
@@ -64,14 +62,12 @@ class TestRadioRecorder(unittest.TestCase):
     def test_transcription_worker_for_empty_queue(self, mock_open, mock_transcribe):
         """Testet, ob bei leerer Queue kein Transkriptionsaufruf erfolgt."""
         self.recorder.running = False
-        # direkt eine leere Queue zuweisen
+
         self.recorder.segment_queue = queue.Queue()
         self.recorder.queued_files = queue.Queue()
         
         self.recorder.transcription_worker(run_once=True)
 
-        # Bei leerer Queue wird ein queue.Empty gefangen (Zeile 135) und weitergemacht,
-        # daher darf kein Transkriptions-Aufruf passieren.
         mock_transcribe.assert_not_called()
         mock_open.assert_not_called()
 

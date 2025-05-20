@@ -24,6 +24,8 @@ def main():
                         help='Startzeitpunkt für die Transkription (Format: YYYYMMDD_HHMMSS), nur relevant bei --transcribe-only.')
     parser.add_argument('--end-time', type=str, default=None,
                         help='Endzeitpunkt für die Transkription (Format: YYYYMMDD_HHMMSS), nur relevant bei --transcribe-only.')
+    parser.add_argument('--token', type=str, default=None,
+                        help='Huggingface Token für PyAnnote, wenn benötigt.')
     parser.add_argument('--ffmpeg-path', default=None,
                         help='Pafd zur ffmpeg-Binary. Ansonsnten wird ffmpeg im PATH gesucht.')
     parser.add_argument('--verbose', action='store_true',
@@ -35,7 +37,6 @@ def main():
 
     from .main import RadioRecorder, WhisperModel
 
-    # Konvertiere das whisper_model Argument in das entsprechende Enum
     whisper_model = WhisperModel[args.whisper_model.upper()]
 
     recorder = RadioRecorder(
@@ -50,6 +51,7 @@ def main():
         transcribe_only=args.transcribe_only,
         start_time_str=args.start_time if args.transcribe_only else None,
         end_time_str=args.end_time if args.transcribe_only else None,
+        token=args.token,
         ffmpeg_path=args.ffmpeg_path,
         verbose=args.verbose,
     )

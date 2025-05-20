@@ -10,7 +10,7 @@ class TestFullRunCycle(unittest.TestCase):
     def setUp(self):
         self.base_dir = "test_run_cycle"
         self.audio_dir = os.path.join(self.base_dir, "RunCycleTest", "audio")
-        os.makedirs(self.audio_dir, exist_ok=True)  # Erstelle Testverzeichnis
+        os.makedirs(self.audio_dir, exist_ok=True)
 
     def tearDown(self):
         if os.path.exists(self.base_dir):
@@ -23,16 +23,14 @@ class TestFullRunCycle(unittest.TestCase):
         recorder = RadioRecorder("http://test", "RunCycleTest", segment_time=1, base_dir=self.base_dir, use_monitor=False)
         recorder.running = True
 
-        # Simuliere das Erstellen der Datei
         temp_mp3 = os.path.join(self.audio_dir, "RunCycleTest_20250317_084145.mp3")
         with open(temp_mp3, "w") as f:
             f.write("fake audio data")
 
-        # Starte den Test-Thread
         test_thread = threading.Thread(target=recorder.run)
         test_thread.start()
 
-        time.sleep(0.5)  # Warte kurz, damit Threads starten
+        time.sleep(0.5)
 
         recorder.stop()
         test_thread.join()

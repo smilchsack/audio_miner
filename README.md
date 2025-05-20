@@ -11,6 +11,7 @@ audio_miner is a Python application that records audio streams and transcribes t
 - Record audio streams in specified segments.
 - Transcribe recorded audio using the Whisper model.
 - Organize recordings and transcriptions in a structured directory.
+- Optional speaker diarization using PyAnnote (requires a Hugging Face token).
 
 ### Installation
 
@@ -45,6 +46,7 @@ audio_miner --stream-url <STREAM_URL> --sender <SENDER_NAME> [--segment-time <SE
 - `--quality`: Audio bitrate for re-encoding (default: 64k).
 - `--start-time`: Start time for transcription in YYYYMMDD_HHMMSS format. Only relevant when using `--transcribe-only`.
 - `--end-time`: End time for transcription in YYYYMMDD_HHMMSS format. Only relevant when using `--transcribe-only`.
+- `--token`: Hugging Face token for PyAnnote speaker diarization model (optional). If provided, diarization will be performed.
 - `--record-only`: Record audio without transcribing.
 - `--transcribe-only`: Transcribe existing audio files without recording.
 - `--verbose`: Enable detailed output.
