@@ -124,7 +124,7 @@ class AudioTranscriber:
             try:
                 with open(os.devnull, 'w') as fnull:
                     with contextlib.redirect_stdout(fnull), contextlib.redirect_stderr(fnull):
-                        res = self.whisper_model.transcribe(tmp_path, language="de") # , language=None
+                        res = self.whisper_model.transcribe(tmp_path, task="transcribe", beam_size=5)
                         text = res["text"].strip()
             except Exception as e:
                 print(f"Error transcribing segment {tmp_path}: {e}")
@@ -148,7 +148,7 @@ class AudioTranscriber:
     def _transcribe_audio_basic(self, audio_path):
         with open(os.devnull, 'w') as fnull:
             with contextlib.redirect_stdout(fnull), contextlib.redirect_stderr(fnull):
-                result = self.whisper_model.transcribe(audio_path, language="de")
+                result = self.whisper_model.transcribe(audio_path, task="transcribe", beam_size=5)
         
         segments = result.get("segments", [])
         transcription = "\n".join(segment["text"].strip() for segment in segments)

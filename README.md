@@ -42,8 +42,9 @@ audio_miner --stream-url <STREAM_URL> --sender <SENDER_NAME> [--segment-time <SE
 - `--segment-time`: Length of each audio segment in seconds (default: 3600).
 - `--base-dir`: Base directory for storing audio and transcription files (default: current directory).
 - `--poll-interval`: Interval in seconds between recordings (default: 5).
-- `--whisper-model`: The Whisper model to use for transcription (default: TURBO; options include TINY, BASE, SMALL, MEDIUM, LARGE, TURBO).
-- `--quality`: Audio bitrate for re-encoding (default: 64k).
+- `--whisper-model`: The Whisper model to use for transcription (default: TURBO; options include TINY, BASE, SMALL, MEDIUM, LARGE, TURBO). **Warning: TURBO requires ~6GB VRAM and LARGE requires ~10GB VRAM. More info: [https://github.com/openai/whisper](https://github.com/openai/whisper)**
+
+- `--quality`: Audio bitrate for re-encoding (e.g., 64k). If not specified, the original stream quality will be copied.
 - `--start-time`: Start time for transcription in YYYYMMDD_HHMMSS format. Only relevant when using `--transcribe-only`.
 - `--end-time`: End time for transcription in YYYYMMDD_HHMMSS format. Only relevant when using `--transcribe-only`.
 - `--token`: Hugging Face token for PyAnnote speaker diarization model (optional). If provided, diarization will be performed.
@@ -57,7 +58,7 @@ audio_miner --stream-url <STREAM_URL> --sender <SENDER_NAME> [--segment-time <SE
 To record from a stream and transcribe it, you can use:
 
 ```bash
-audio_miner --stream-url 'https://liveradio.swr.de/sw282p3/swr1rp/' --sender 'swr1' --segment-time 3600 --base-dir './output' --poll-interval 5 --whisper-model TURBO --quality '64k'
+audio_miner --stream-url 'https://liveradio.swr.de/sw282p3/swr1rp/' --sender 'swr1' --segment-time 300 --base-dir './output' --poll-interval 5 --whisper-model TURBO
 ```
 
 ### Contributing

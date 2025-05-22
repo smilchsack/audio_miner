@@ -40,7 +40,7 @@ class TestRadioRecorder(unittest.TestCase):
             result = self.recorder.transcribe_audio("test.mp3")
 
             self.assertEqual(result, "Hallo Welt")
-            mock_whisper_model_transcribe.assert_called_once_with("test.mp3", language='de')
+            mock_whisper_model_transcribe.assert_called_once_with("test.mp3", task="transcribe", beam_size=5)
 
     @patch("audio_miner.main.RadioRecorder.transcribe_audio")
     @patch("builtins.open", new_callable=mock_open)

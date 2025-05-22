@@ -14,8 +14,8 @@ def main():
                         help='Intervall zwischen den Aufnahmen (Sekunden)')
     parser.add_argument('--whisper-model', default='TURBO',
                         help='Whisper Modell (z.B. TURBO, BASE, etc.)')
-    parser.add_argument('--quality', default='64k',
-                        help='Audio-Qualität für die Aufnahme')
+    parser.add_argument('--quality', default=None,
+                        help='Audio-Qualität für die Aufnahme (z.B. 32k, 64k). Standard ist die Qualität des Streams beizubehalten.')
     parser.add_argument('--record-only', action='store_true',
                         help='Nur aufzeichnen, ohne Transkription.')
     parser.add_argument('--transcribe-only', action='store_true',

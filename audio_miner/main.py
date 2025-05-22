@@ -82,7 +82,7 @@ class FileMonitor(threading.Thread):
 class RadioRecorder:
     five_percent = 5
 
-    def __init__(self, stream_url, sender, segment_time=60, base_dir=None, poll_interval=5, whisper_model=WhisperModel.TURBO, quality="64k", record_only=False, transcribe_only=False, start_time_str=None, end_time_str=None, token=None, verbose=False, ffmpeg_path=None, run_once=False, use_monitor=True):
+    def __init__(self, stream_url, sender, segment_time=60, base_dir=None, poll_interval=5, whisper_model=WhisperModel.TURBO, quality=None, record_only=False, transcribe_only=False, start_time_str=None, end_time_str=None, token=None, verbose=False, ffmpeg_path=None, run_once=False, use_monitor=True):
         if base_dir is None:
             base_dir = os.getcwd()
         
@@ -206,7 +206,6 @@ class RadioRecorder:
         temp_output_file = os.path.join(self.audio_dir, f"{self.sender}_{start_timestamp}.mp3")
 
         if self.use_monitor:
-            # FileMonitor starten:
             monitor = FileMonitor(
                 file_path=temp_output_file,
                 callback=self._on_tempfile_inactive,
@@ -227,10 +226,14 @@ class RadioRecorder:
             '-reconnect_delay_max', str(reconnect_delay_max),                   # Legt fest, wie lange (in Sekunden) maximal zwischen den Verbindungsversuchen gewartet wird
             '-i', self.stream_url,
             '-t', str(self.segment_time),
-            '-c:a', 'libmp3lame',
-            '-b:a', self.quality,
-            temp_output_file
         ]
+        if self.quality is not None:
+            command.extend(['-c:a', 'libmp3lame', '-b:a', str(self.quality)])
+        else:
+            command.extend(['-c:a', 'copy'])
+        
+        command.append(temp_output_file)
+
         self.logger.info("Starte Aufnahme für Segment: %s (Versuch %d/%d)", temp_output_file, attempt+1, max_retries)
         
         self.ffmpeg_process = subprocess.Popen(
